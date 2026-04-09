@@ -1,5 +1,86 @@
 import Room from '../models/room.js';
 
+export const getAdminRooms = async (req, res) => {
+	try {
+		const { search, isActive, page = 1, limit = 20 } = req.query;
+		const filters = {};
+
+		if (isActive === 'true') {
+			filters.isActive = true;
+		}
+
+		if (isActive === 'false') {
+			filters.isActive = false;
+		}
+
+		if (search) {
+			filters.$or = [
+				{ name: { $regex: search, $options: 'i' } },
+				{ description: { $regex: search, $options: 'i' } }
+			];
+		}
+
+		const parsedPage = Math.max(Number(page) || 1, 1);
+		const parsedLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
+		const skip = (parsedPage - 1) * parsedLimit;
+
+		const [rooms, total] = await Promise.all([
+			Room.find(filters).sort({ createdAt: -1 }).skip(skip).limit(parsedLimit),
+			Room.countDocuments(filters)
+		]);
+
+		res.status(200).json({
+			success: true,
+			count: rooms.length,
+			total,
+			page: parsedPage,
+			pages: Math.ceil(total / parsedLimit),
+			data: rooms
+		});
+	} catch (error) {
+		res.status(500).json({
+			success: false,
+			message: error.message
+		});
+	}
+};
+
+export const getRoomAdminStats = async (req, res) => {
+	try {
+		const [totalRooms, activeRooms, inactiveRooms, totalAvailableCapacity, priceAgg] = await Promise.all([
+			Room.countDocuments(),
+			Room.countDocuments({ isActive: true }),
+			Room.countDocuments({ isActive: false }),
+			Room.aggregate([
+				{ $match: { isActive: true } },
+				{ $group: { _id: null, total: { $sum: '$availableRooms' } } }
+			]),
+			Room.aggregate([
+				{ $match: { isActive: true } },
+				{ $group: { _id: null, averagePrice: { $avg: '$price' }, minPrice: { $min: '$price' }, maxPrice: { $max: '$price' } } }
+			])
+		]);
+
+		res.status(200).json({
+			success: true,
+			data: {
+				totalRooms,
+				activeRooms,
+				inactiveRooms,
+				totalAvailableCapacity: totalAvailableCapacity[0]?.total || 0,
+				averagePrice: priceAgg[0]?.averagePrice || 0,
+				minPrice: priceAgg[0]?.minPrice || 0,
+				maxPrice: priceAgg[0]?.maxPrice || 0
+			}
+		});
+	} catch (error) {
+		res.status(500).json({
+			success: false,
+			message: error.message
+		});
+	}
+};
+
 export const getRooms = async (req, res) => {
 	try {
 		const { minPrice, maxPrice, guests, search, onlyAvailable } = req.query;
@@ -127,6 +208,68 @@ export const deleteRoom = async (req, res) => {
 		res.status(200).json({
 			success: true,
 			message: 'Room deleted successfully'
+		});
+	} catch (error) {
+		res.status(500).json({
+			success: false,
+			message: error.message
+		});
+	}
+};
+
+export const restoreRoom = async (req, res) => {
+	try {
+		const room = await Room.findById(req.params.id);
+
+		if (!room) {
+			return res.status(404).json({
+				success: false,
+				message: 'Room not found'
+			});
+		}
+
+		room.isActive = true;
+		await room.save();
+
+		res.status(200).json({
+			success: true,
+			message: 'Room restored successfully',
+			data: room
+		});
+	} catch (error) {
+		res.status(500).json({
+			success: false,
+			message: error.message
+		});
+	}
+};
+
+export const updateRoomAvailability = async (req, res) => {
+	try {
+		const { availableRooms } = req.body;
+
+		if (!Number.isInteger(availableRooms) || availableRooms < 0) {
+			return res.status(400).json({
+				success: false,
+				message: 'availableRooms must be a non-negative integer'
+			});
+		}
+
+		const room = await Room.findById(req.params.id);
+		if (!room) {
+			return res.status(404).json({
+				success: false,
+				message: 'Room not found'
+			});
+		}
+
+		room.availableRooms = availableRooms;
+		await room.save();
+
+		res.status(200).json({
+			success: true,
+			message: 'Room availability updated successfully',
+			data: room
 		});
 	} catch (error) {
 		res.status(500).json({
