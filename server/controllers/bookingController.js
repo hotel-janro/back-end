@@ -4,6 +4,13 @@ import mongoose from 'mongoose';
 
 const ONE_DAY_MS = 1000 * 60 * 60 * 24;
 const CANCELLABLE_BY_USER = ['pending', 'confirmed'];
+const HONEYMOON_DECORATION_ITEMS = [
+	'Rose petals on bed',
+	'Flower bouquet',
+	'Scented candles',
+	'Heart balloon setup',
+	'Chocolate gift box'
+];
 
 const STATUS_TRANSITIONS = {
 	pending: ['confirmed', 'cancelled'],
@@ -26,6 +33,15 @@ const isValidStatusTransition = (fromStatus, toStatus) => {
 	return (STATUS_TRANSITIONS[fromStatus] || []).includes(toStatus);
 };
 
+const sanitizeDecorationItems = (items) => {
+	if (!Array.isArray(items)) {
+		return [];
+	}
+
+	const uniqueItems = [...new Set(items.map((item) => String(item).trim()))];
+	return uniqueItems.filter((item) => HONEYMOON_DECORATION_ITEMS.includes(item));
+};
+
 export const createBooking = async (req, res) => {
 	let session;
 	try {
@@ -38,6 +54,8 @@ export const createBooking = async (req, res) => {
 			email,
 			phone,
 			specialRequests
+			,
+			decorationItems
 		} = req.body;
 
 		if (!roomId || !checkInDate || !checkOutDate || !guests || !fullName || !email) {
@@ -100,6 +118,9 @@ export const createBooking = async (req, res) => {
 		room.availableRooms -= 1;
 		await room.save({ session });
 
+		const supportsDecorations = String(room.name || '').toLowerCase().includes('honeymoon');
+		const sanitizedDecorationItems = supportsDecorations ? sanitizeDecorationItems(decorationItems) : [];
+
 		const totalPrice = room.price * nights;
 		const [booking] = await Booking.create(
 			[
@@ -114,7 +135,8 @@ export const createBooking = async (req, res) => {
 					checkOutDate,
 					nights,
 					totalPrice,
-					specialRequests
+					specialRequests,
+					decorationItems: sanitizedDecorationItems
 				}
 			],
 			{ session }

@@ -61,6 +61,10 @@ const bookingSchema = new mongoose.Schema(
 			type: String,
 			trim: true,
 			default: ''
+		},
+		decorationItems: {
+			type: [String],
+			default: []
 		}
 	},
 	{
