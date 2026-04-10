@@ -168,6 +168,62 @@ export const getBookings = async (req, res) => {
 	}
 };
 
+export const getMonthlyRevenueReport = async (req, res) => {
+	try {
+		const now = new Date();
+		const year = Number.parseInt(req.query.year, 10) || now.getFullYear();
+		const month = Number.parseInt(req.query.month, 10) || now.getMonth() + 1;
+
+		if (!Number.isInteger(year) || year < 2000 || year > 3000) {
+			return res.status(400).json({
+				success: false,
+				message: 'Invalid year. Use a value like 2026'
+			});
+		}
+
+		if (!Number.isInteger(month) || month < 1 || month > 12) {
+			return res.status(400).json({
+				success: false,
+				message: 'Invalid month. Use values 1-12'
+			});
+		}
+
+		const startDate = new Date(year, month - 1, 1);
+		const endDate = new Date(year, month, 1);
+
+		const [result] = await Booking.aggregate([
+			{
+				$match: {
+					status: { $ne: 'cancelled' },
+					checkInDate: { $gte: startDate, $lt: endDate }
+				}
+			},
+			{
+				$group: {
+					_id: null,
+					totalRevenue: { $sum: '$totalPrice' },
+					totalBookings: { $sum: 1 }
+				}
+			}
+		]);
+
+		res.status(200).json({
+			success: true,
+			data: {
+				year,
+				month,
+				totalRevenue: result?.totalRevenue || 0,
+				totalBookings: result?.totalBookings || 0
+			}
+		});
+	} catch (error) {
+		res.status(500).json({
+			success: false,
+			message: error.message
+		});
+	}
+};
+
 export const getMyBookings = async (req, res) => {
 	try {
 		const bookings = await Booking.find({ user: req.user._id })
