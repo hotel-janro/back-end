@@ -4,6 +4,7 @@ import cors from "cors";
 import dns from "dns";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
+import weddingRoutes from "./routes/weddingRoutes.js";
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.get("/", (req, res) => {
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/wedding", weddingRoutes);
 
 const PORT = process.env.PORT || 5000;
 
