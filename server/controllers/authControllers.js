@@ -6,10 +6,24 @@ export const register = async (req, res) => {
     try {
         const { name, email, password, confirmPassword, phone } = req.body;
 
+        if (!name || !email || !password || !confirmPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide name, email, password and confirmPassword'
+            });
+        }
+
+        if (password !== confirmPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Passwords do not match'
+            });
+        }
+
         // Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-            return res.status(400).json({ message: 'User already exists' });
+            return res.status(400).json({ success: false, message: 'User already exists' });
         }
 
         // Create new user (password will be hashed by the pre-save middleware)
@@ -47,6 +61,13 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide email and password'
+            });
+        }
 
         // Check if user exists and include password field
         const user = await User.findOne({ email }).select('+password');
