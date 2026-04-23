@@ -16,23 +16,6 @@ app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
-<<<<<<< Updated upstream
-  res.send("Hotel Management Backend Running");
-});
-
-// Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/wedding", weddingRoutes);
-
-const PORT = process.env.PORT || 5000;
-
-// Connect to MongoDB
-await connectDB();
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-=======
   res.json({ message: "POS API running" });
 });
 
@@ -53,4 +36,3 @@ async function startServer() {
 }
 
 startServer();
->>>>>>> Stashed changes
