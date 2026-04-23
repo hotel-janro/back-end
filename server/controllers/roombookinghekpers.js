@@ -1,0 +1,53 @@
+export const ONE_DAY_MS = 1000 * 60 * 60 * 24;
+
+export const CANCELLABLE_BY_USER = ['pending', 'confirmed'];
+
+export const HONEYMOON_DECORATION_ITEMS = [
+	'Rose petals on bed',
+	'Flower bouquet',
+	'Scented candles',
+	'Heart balloon setup',
+	'Chocolate gift box'
+];
+
+export const STATUS_TRANSITIONS = {
+	pending: ['confirmed', 'cancelled'],
+	confirmed: ['checked-in', 'cancelled'],
+	'checked-in': ['checked-out'],
+	'checked-out': [],
+	cancelled: ['pending', 'confirmed']
+};
+
+// Converts check-in/check-out dates into total nights.
+export const calculateNights = (checkInDate, checkOutDate) => {
+	const diff = new Date(checkOutDate).getTime() - new Date(checkInDate).getTime();
+	return Math.ceil(diff / ONE_DAY_MS);
+};
+
+// Allows same-status updates and valid next transitions only.
+export const isValidStatusTransition = (fromStatus, toStatus) => {
+	if (fromStatus === toStatus) {
+		return true;
+	}
+
+	return (STATUS_TRANSITIONS[fromStatus] || []).includes(toStatus);
+};
+
+// Keeps only valid, unique honeymoon decoration options.
+export const sanitizeDecorationItems = (items) => {
+	if (!Array.isArray(items)) {
+		return [];
+	}
+
+	const uniqueItems = [...new Set(items.map((item) => String(item).trim()))];
+	return uniqueItems.filter((item) => HONEYMOON_DECORATION_ITEMS.includes(item));
+};
+
+// Safely rolls back DB transaction, then sends API response.
+export const abortTransactionWithResponse = async (session, res, statusCode, payload) => {
+	if (session && session.inTransaction()) {
+		await session.abortTransaction();
+	}
+
+	return res.status(statusCode).json(payload);
+};
