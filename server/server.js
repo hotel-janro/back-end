@@ -1,22 +1,22 @@
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
-import dns from "dns";
+import dotenv from "dotenv";
+
 import { connectDB } from "./config/db.js";
-import authRoutes from "./routes/authRoutes.js";
-import weddingRoutes from "./routes/weddingRoutes.js";
+import menuRoutes from "./routes/menuRoutes.js";
+import orderRoutes from "./routes/orderRoutes.js";
+import inventoryRoutes from "./routes/inventoryRoutes.js";
 
 dotenv.config();
 
-// Use Google DNS to resolve MongoDB Atlas SRV records
-dns.setServers(["8.8.8.8", "8.8.4.4"]);
-
 const app = express();
+const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
+<<<<<<< Updated upstream
   res.send("Hotel Management Backend Running");
 });
 
@@ -32,3 +32,25 @@ await connectDB();
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+=======
+  res.json({ message: "POS API running" });
+});
+
+app.use("/api/menu", menuRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/inventory", inventoryRoutes);
+
+async function startServer() {
+  try {
+    await connectDB();
+
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    process.exit(1);
+  }
+}
+
+startServer();
+>>>>>>> Stashed changes
