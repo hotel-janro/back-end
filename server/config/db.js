@@ -1,13 +1,7 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 export const connectDB = async () => {
-  const mongoUri = process.env.MONGO_URI;
-
-  if (!mongoUri) {
-    console.error("❌ MONGO_URI is missing in environment variables.");
-    console.warn("⚠️  Add MONGO_URI to your .env file to enable database connection.");
-    return null;
-  }
+  const mongoUri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/hotel_janro";
 
   try {
     console.log("🔄 Attempting to connect to MongoDB...");
