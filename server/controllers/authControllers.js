@@ -1,5 +1,7 @@
 import User from '../models/user.js';
-import { generateToken } from '../utils/generateToken.js';
+import { generateAccessToken, generateRefreshToken } from '../utils/generateToken.js';
+import jwt from 'jsonwebtoken';
+
 
 // Register new user (always registers as 'customer')
 export const register = async (req, res) => {
@@ -36,8 +38,10 @@ export const register = async (req, res) => {
             phone
         });
 
-        // Generate token with role
-        const token = generateToken(user._id, user.role);
+        // Generate both Access and Refresh tokens
+        const accessToken = generateAccessToken(user._id, user.role);
+        const refreshToken = generateRefreshToken(user._id, user.role);
+
 
         res.status(201).json({
             success: true,
@@ -46,8 +50,11 @@ export const register = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                token
+                token: accessToken,
+                refreshToken
             }
+
+
         });
     } catch (error) {
         res.status(500).json({ 
@@ -87,8 +94,10 @@ export const login = async (req, res) => {
             });
         }
 
-        // Generate token with role
-        const token = generateToken(user._id, user.role);
+        // Generate both Access and Refresh tokens
+        const accessToken = generateAccessToken(user._id, user.role);
+        const refreshToken = generateRefreshToken(user._id, user.role);
+
 
         res.status(200).json({
             success: true,
@@ -97,8 +106,11 @@ export const login = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                token
+                token: accessToken,
+                refreshToken
             }
+
+
         });
     } catch (error) {
         res.status(500).json({ 
@@ -183,3 +195,36 @@ export const updateUserRole = async (req, res) => {
         });
     }
 };
+
+// Refresh Token Controller - Generates a new Access Token using a valid Refresh Token
+export const refresh = async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+
+        if (!refreshToken) {
+            return res.status(401).json({ success: false, message: 'Refresh Token is required' });
+        }
+
+        // Verify the refresh token
+        const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+        
+        // Find the user to make sure they still exist
+        const user = await User.findById(decoded.id);
+        if (!user) {
+            return res.status(401).json({ success: false, message: 'User not found' });
+        }
+
+        // Generate a new Access Token (15 min)
+        const newAccessToken = generateAccessToken(user._id, user.role);
+
+        res.status(200).json({
+            success: true,
+            token: newAccessToken
+        });
+    } catch (error) {
+        res.status(401).json({ 
+            success: false, 
+            message: 'Invalid or expired refresh token. Please login again.' 
+        });
+    }
+};
