@@ -7,12 +7,18 @@ const orderSchema = new mongoose.Schema(
       enum: ["Dine-in", "Room", "Delivery"],
       required: true,
     },
+    // Newly added fields (filled based on the order type)
+    tableNumber: { type: String }, 
+    roomNumber: { type: String }, 
+    deliveryAddress: { type: String }, 
+    contactNumber: { type: String },
+
     items: [
       {
-        menuItemId: { type: mongoose.Schema.Types.ObjectId, ref: "MenuItem" },
-        name: String,
-        price: Number,
-        quantity: Number,
+        menuItemId: { type: mongoose.Schema.Types.ObjectId, ref: "MenuItem", required: true },
+        name: { type: String, required: true },
+        price: { type: Number, required: true },
+        quantity: { type: Number, required: true },
       },
     ],
     subtotal: { type: Number, required: true },

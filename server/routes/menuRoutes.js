@@ -7,12 +7,38 @@ import {
   deleteMenuItem,
 } from "../controllers/menuController.js";
 
+
+//import { verifyToken, authorizeRoles } from "../middleware/authMiddleware.js";
+import upload from "../middleware/upload.js"; 
+
 const router = express.Router();
 
+// Public Routes (Customers)
 router.get("/", getMenuItems);
 router.get("/:id", getMenuItemById);
-router.post("/", createMenuItem);
-router.put("/:id", updateMenuItem);
-router.delete("/:id", deleteMenuItem);
+
+// Protected Routes (Admin/Manager)
+router.post(
+  "/",
+  //verifyToken, 
+  //authorizeRoles("Admin", "Manager"), 
+  upload.single("image"), 
+  createMenuItem
+);
+
+router.put(
+  "/:id",
+  //verifyToken,
+  //authorizeRoles("Admin", "Manager"),
+  upload.single("image"),
+  updateMenuItem
+);
+
+router.delete(
+  "/:id",
+  //verifyToken,
+  //authorizeRoles("Admin", "Manager"),
+  deleteMenuItem
+);
 
 export default router;

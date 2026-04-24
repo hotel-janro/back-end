@@ -12,7 +12,6 @@ export const connectDB = async () => {
     return conn;
   } catch(error) {
     console.error("❌ MongoDB Connection Error:", error.message);
-    console.warn("⚠️  MongoDB connection failed. Server running without database connection.");
-    return null;
+    throw error; // Throw so startServer can catch and exit
   }
 };
