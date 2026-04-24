@@ -1,38 +1,44 @@
 import express from "express";
-import cors from "cors";
 import dotenv from "dotenv";
-
+import cors from "cors";
+import dns from "dns";
 import { connectDB } from "./config/db.js";
+import authRoutes from "./routes/authRoutes.js";
+import roomRoutes from "./routes/roomRoutes.js";
+import bookingRoutes from "./routes/bookingRoutes.js";
+import weddingRoutes from "./routes/weddingRoutes.js";
 import menuRoutes from "./routes/menuRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import inventoryRoutes from "./routes/inventoryRoutes.js";
 
 dotenv.config();
 
+// Use Google DNS to resolve MongoDB Atlas SRV records
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
+
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  res.json({ message: "POS API running" });
+  res.send("Hotel Management Backend Running");
 });
 
+// Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/rooms", roomRoutes);
+app.use("/api/bookings", bookingRoutes);
+app.use("/api/wedding", weddingRoutes);
 app.use("/api/menu", menuRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/inventory", inventoryRoutes);
 
-async function startServer() {
-  try {
-    await connectDB();
+const PORT = process.env.PORT || 5000;
 
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  } catch (error) {
-    process.exit(1);
-  }
-}
+// Connect to MongoDB
+await connectDB();
 
-startServer();
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
