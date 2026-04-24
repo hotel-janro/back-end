@@ -10,6 +10,7 @@ import weddingRoutes from "./routes/weddingRoutes.js";
 import menuRoutes from "./routes/menuRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import inventoryRoutes from "./routes/inventoryRoutes.js";
+import poolBookingRoutes from "./routes/poolBookingRoutes.js";
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.use("/api/wedding", weddingRoutes);
 app.use("/api/menu", menuRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/inventory", inventoryRoutes);
+app.use("/api/pool-bookings", poolBookingRoutes);
 
 const PORT = process.env.PORT || 5000;
 
