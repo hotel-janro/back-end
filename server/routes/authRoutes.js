@@ -1,5 +1,5 @@
 import express from 'express';
-import { register, login, refresh, getMe, updateUserRole, getAllUsers } from '../controllers/authControllers.js';
+import { register, login, refresh, getMe, updateUserRole, getAllUsers, createStaff, updateUser, deleteUser } from '../controllers/authControllers.js';
 
 import { protect, authorize } from '../middleware/authMiddleware.js';
 
@@ -17,6 +17,9 @@ router.get('/me', protect, getMe);
 // Admin-only routes
 router.get('/users', protect, authorize('admin'), getAllUsers);
 router.put('/users/:id/role', protect, authorize('admin'), updateUserRole);
+router.post('/users', protect, authorize('admin'), createStaff);
+router.put('/users/:id', protect, authorize('admin'), updateUser);
+router.delete('/users/:id', protect, authorize('admin'), deleteUser);
 
 // Admin + Manager routes (example)
 // router.get('/dashboard', protect, authorize('admin', 'manager'), getDashboard);

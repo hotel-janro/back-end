@@ -155,6 +155,60 @@ export const getAllUsers = async (req, res) => {
     }
 };
 
+// Create staff user (Admin only)
+export const createStaff = async (req, res) => {
+    try {
+        const { name, email, phone, role, department, salary, joinDate, status } = req.body;
+
+        if (!name || !email) {
+            return res.status(400).json({ success: false, message: 'Name and email are required' });
+        }
+
+        // Allow all staff roles (admin role cannot be assigned via this endpoint)
+        const allowedRoles = ['staff', 'manager', 'receptionist', 'chef', 'waiter', 'housekeeping', 'security', 'maintenance'];
+        const assignedRole = (role || 'staff').toLowerCase();
+        if (!allowedRoles.includes(assignedRole)) {
+            return res.status(400).json({ success: false, message: 'Invalid role for this endpoint' });
+        }
+
+        const existing = await User.findOne({ email });
+        if (existing) return res.status(400).json({ success: false, message: 'User already exists' });
+
+        // Generate a temporary password for staff — admin should instruct staff to reset
+        const tempPassword = `Staff@${Math.random().toString(36).slice(2,8)}`;
+
+        const user = await User.create({
+            name,
+            email,
+            password: tempPassword,
+            confirmPassword: tempPassword,
+            phone,
+            role: assignedRole,
+            department,
+            salary,
+            joinDate,
+            status
+        });
+
+        res.status(201).json({
+            success: true,
+            data: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                phone: user.phone,
+                department: user.department,
+                salary: user.salary,
+                joinDate: user.joinDate,
+                status: user.status
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 // Update user role (Admin only)
 export const updateUserRole = async (req, res) => {
     try {
@@ -196,6 +250,60 @@ export const updateUserRole = async (req, res) => {
     }
 };
 
+// Update user details (Admin only)
+export const updateUser = async (req, res) => {
+    try {
+        const allowed = ['name', 'phone', 'role', 'department', 'salary', 'joinDate', 'status', 'email'];
+        const updates = {};
+        for (const key of allowed) {
+            if (req.body[key] !== undefined) updates[key] = req.body[key];
+        }
+
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+        // Prevent demoting the last admin or modifying admin via this route? Keep simple: allow edits but prevent role change to admin here
+        if (updates.role && updates.role === 'admin') {
+            return res.status(403).json({ success: false, message: 'Cannot assign admin role via this endpoint' });
+        }
+
+        Object.assign(user, updates);
+        await user.save({ validateBeforeSave: false });
+
+        res.status(200).json({ success: true, data: {
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+            department: user.department,
+            salary: user.salary,
+            joinDate: user.joinDate,
+            status: user.status
+        }});
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Delete user (Admin only)
+export const deleteUser = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+        if (user.role === 'admin') {
+            return res.status(403).json({ success: false, message: 'Cannot delete admin users' });
+        }
+
+        await User.findByIdAndDelete(req.params.id);
+
+        res.status(200).json({ success: true, message: 'User deleted' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 // Refresh Token Controller - Generates a new Access Token using a valid Refresh Token
 export const refresh = async (req, res) => {
     try {
@@ -227,4 +335,4 @@ export const refresh = async (req, res) => {
             message: 'Invalid or expired refresh token. Please login again.' 
         });
     }
-};
+};

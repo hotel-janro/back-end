@@ -34,9 +34,25 @@ const userSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
+    department: {
+        type: String,
+        trim: true
+    },
+    salary: {
+        type: Number,
+        default: 0
+    },
+    joinDate: {
+        type: Date
+    },
+    status: {
+        type: String,
+        enum: ['Active', 'Inactive', 'On Leave'],
+        default: 'Active'
+    },
     role: {
         type: String,
-        enum: ['customer', 'manager', 'admin', 'staff'],
+        enum: ['customer', 'manager', 'admin', 'staff', 'receptionist', 'chef', 'waiter', 'housekeeping', 'security', 'maintenance'],
         default: 'customer'
     },
     createdAt: {
