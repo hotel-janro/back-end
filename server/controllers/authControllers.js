@@ -336,3 +336,36 @@ export const refresh = async (req, res) => {
         });
     }
 };
+
+// Change Password
+export const changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword, confirmPassword } = req.body;
+
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            return res.status(400).json({ success: false, message: 'Please provide all fields' });
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({ success: false, message: 'New passwords do not match' });
+        }
+
+        // Find user by ID and include password
+        const user = await User.findById(req.user._id).select('+password');
+
+        // Check if current password matches
+        const isMatch = await user.comparePassword(currentPassword);
+        if (!isMatch) {
+            return res.status(401).json({ success: false, message: 'Incorrect current password' });
+        }
+
+        // Set new password
+        user.password = newPassword;
+        user.confirmPassword = confirmPassword;
+        await user.save();
+
+        res.status(200).json({ success: true, message: 'Password updated successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
